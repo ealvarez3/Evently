@@ -1,0 +1,200 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ event.title }}</title>
+  <meta name="robots" content="noindex">
+  <meta property="og:title" content="{{ event.title }}{% if family %} · {{ family.surname }}{% endif %}">
+  <meta property="og:description" content="{{ event.start|date:'l j \d\e F'|capfirst }} en {{ event.venue_name }}. ¡Te esperamos!">
+  {% if event.hero_child %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ event.hero_child.url }}">{% endif %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'invite/style.css' %}">
+</head>
+<body>
+<script>
+  document.documentElement.classList.add('js');
+  // cover shows once per tab, so it doesn't come back after confirming or suggesting a song
+  try { if (!sessionStorage.opened) document.body.classList.add('sealed'); } catch (e) {}
+</script>
+
+<div class="cover">
+  {% if event.cover_image %}<img class="cover-logo" src="{{ event.cover_image.url }}" alt="">{% endif %}
+  {% if event.cover_photo %}<img class="cover-photo" src="{{ event.cover_photo.url }}" alt="">{% endif %}
+  {% if event.cover_audio %}<audio id="voice" src="{{ event.cover_audio.url }}" preload="auto"></audio>{% endif %}
+  {% if family %}<p class="cover-for">Para: {{ family.surname }}</p>{% endif %}
+  <button class="cover-btn" type="button">Abrir expediente secreto</button>
+  <p class="cover-wait" role="status">¡No te vayas! Tu invitación se abre en <b>…</b></p>
+</div>
+
+<div class="swinger" aria-hidden="true"><div class="swinger-cross"><div class="swinger-swing">{% if event.swing_image %}<img src="{{ event.swing_image.url }}" alt="">{% else %}🕷️{% endif %}</div></div></div>
+{% if event.music %}
+<audio id="music" src="{{ event.music.url }}" loop preload="auto"></audio>
+<button class="music-btn" type="button" aria-pressed="false" aria-label="Música de la fiesta">🎵</button>
+{% endif %}
+
+<header class="hero">
+  <div class="hero-panel hero-character">
+    {% if event.hero_character %}<img src="{{ event.hero_character.url }}" alt="Spidey">{% endif %}
+  </div>
+  <div class="hero-title">
+    <span class="burst"><b>{{ event.age }}</b><small>años</small></span>
+    <h1>¡{{ event.child_name }}<br>cumple {{ event.age }}!</h1>
+  </div>
+  <div class="hero-panel hero-child">
+    {% if event.hero_child %}<img src="{{ event.hero_child.url }}" alt="{{ event.child_name }}">{% else %}<p>Aquí va la foto de {{ event.child_name }}</p>{% endif %}
+  </div>
+</header>
+
+<section class="when">
+  <p class="when-date">{{ event.start|date:"l j \d\e F \d\e Y"|capfirst }}, de {{ event.start|date:"g:i A" }} a {{ event.end|date:"g:i A" }}</p>
+  <div class="countdown" data-countdown="{{ event.start|date:'c' }}">
+    <div><b data-d>--</b><span>días</span></div>
+    <div><b data-h>--</b><span>horas</span></div>
+    <div><b data-m>--</b><span>minutos</span></div>
+    <div><b data-s>--</b><span>segundos</span></div>
+    <p class="countdown-done">¡Hoy es la fiesta!</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-yellow" href="{{ event.google_calendar_url }}" target="_blank" rel="noopener">Agregar a Google Calendar</a>
+    <a class="btn" href="{% url 'calendar' %}">Agregar a Apple / Outlook</a>
+  </div>
+</section>
+
+<main>
+
+<section class="panel" id="asistencia" data-sfx="¡POW!">
+  {% if family %}
+    <h2 class="caption">{{ family.surname }}</h2>
+    <p class="lead">{{ event.child_full_name }} cumple {{ event.age }} años y te invita a su fiesta. Este pase es para:</p>
+    <div class="pass">
+      <label>Adultos <input value="{{ family.adults }}" readonly tabindex="-1"></label>
+      <label>Niños <input value="{{ family.boys }}" readonly tabindex="-1"></label>
+      <label>Niñas <input value="{{ family.girls }}" readonly tabindex="-1"></label>
+    </div>
+    {% if family.status == "yes" %}<p class="status status-yes">¡Asistencia confirmada! Nos vemos en la fiesta.</p>
+    {% elif family.status == "no" %}<p class="status status-no">Respuesta guardada: no asistiré. Te vamos a extrañar.</p>{% endif %}
+    <form class="actions" method="post" action="{% url 'rsvp' family.token %}">
+      {% csrf_token %}
+      {% if family.status != "yes" %}<button class="btn btn-red" name="answer" value="yes">Confirmar asistencia</button>{% endif %}
+      {% if family.status != "no" %}<button class="btn" name="answer" value="no">No asistiré</button>{% endif %}
+    </form>
+  {% else %}
+    <h2 class="caption">¡Estás invitado!</h2>
+    <p class="lead">{{ event.child_full_name }} cumple {{ event.age }} años. Para confirmar tu asistencia abre el enlace personal que te enviamos.</p>
+  {% endif %}
+</section>
+
+{% for place in event.places %}
+<section class="panel" id="lugar-{{ forloop.counter }}" data-sfx="{% cycle '¡ZAS!' '¡WOW!' %}">
+  <h2 class="caption">{{ place.icon }} {{ place.title }}</h2>
+  <p class="lead"><strong>{{ place.name }}</strong><br>{{ place.address }}{% if place.when %}<br><span class="place-time">{{ place.when|date:"g:i A" }}</span>{% endif %}</p>
+  <iframe class="map" src="{{ place.embed }}" title="Mapa de {{ place.name }}" loading="lazy"></iframe>
+  <p>Ábrelo en tu app de mapas:</p>
+  <div class="actions">
+    <a class="btn btn-blue" href="{{ place.google }}" target="_blank" rel="noopener">Google Maps</a>
+    <a class="btn btn-blue" href="{{ place.waze }}" target="_blank" rel="noopener">Waze</a>
+    <a class="btn btn-blue" href="{{ place.apple }}" target="_blank" rel="noopener">Apple Maps</a>
+  </div>
+</section>
+{% endfor %}
+
+{% if itinerary %}
+<section class="panel" id="itinerario" data-sfx="¡BAM!">
+  <h2 class="caption">Itinerario</h2>
+  <ol class="timeline">
+    {% for item in itinerary %}
+    <li>
+      <span class="timeline-icon" aria-hidden="true">{{ item.icon }}</span>
+      <time>{{ item.time|time:"g:i A" }}</time>
+      <h3>{{ item.title }}</h3>
+      {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+<section class="panel panel-red mission" id="vestimenta">
+  <h2 class="caption">Misión opcional</h2>
+  <p class="mission-title">¡Se buscan superhéroes!</p>
+  <ul class="mission-gear" aria-hidden="true"><li>🦸</li><li>🎭</li><li>🧢</li><li>👕</li><li>🦹</li></ul>
+  <p class="mission-text">{{ event.dress_code }}</p>
+  <p class="stamp">No es obligatorio</p>
+</section>
+
+{% if growth %}
+<section class="panel" id="crecimiento" data-sfx="¡AWW!">
+  <h2 class="caption">Así he crecido</h2>
+  <div class="carousel">
+    <button class="carousel-btn" data-dir="-1" aria-label="Foto anterior">‹</button>
+    <ul class="carousel-track">
+      {% for photo in growth %}
+      <li><figure>
+        <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:event.child_name }}" loading="lazy">
+        {% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}
+      </figure></li>
+      {% endfor %}
+    </ul>
+    <button class="carousel-btn" data-dir="1" aria-label="Foto siguiente">›</button>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel" id="canciones" data-sfx="¡LA LA!">
+  <h2 class="caption">Pide tu canción</h2>
+  <p class="lead">¿Qué canción no puede faltar en la fiesta?</p>
+  {% if family %}
+  <form class="song-form" method="post" action="{% url 'song' family.token %}">
+    {% csrf_token %}
+    <label>Canción <input name="title" maxlength="120" required></label>
+    <label>Artista <input name="artist" maxlength="120"></label>
+    <button class="btn btn-yellow">Sugerir canción</button>
+  </form>
+  {% endif %}
+  {% if songs %}
+  <ul class="songs">
+    {% for s in songs %}<li><strong>{{ s.title }}</strong>{% if s.artist %}, {{ s.artist }}{% endif %} <small>{{ s.family.surname }}</small></li>{% endfor %}
+  </ul>
+  {% elif not family %}<p>Aún no hay canciones sugeridas.</p>{% endif %}
+</section>
+
+<section class="panel panel-blue" id="boveda" data-sfx="¡CLICK!">
+  <h2 class="caption">Bóveda de fotos</h2>
+  {% if not event.vault_open %}
+    <p class="lead">¿Tomaste fotos en la fiesta? La bóveda se abre el {{ event.vault_opens_at|date:"l j \d\e F"|lower }} a las {{ event.vault_opens_at|date:"g:i A" }} para que las compartas con todos.</p>
+    <div class="countdown" data-countdown="{{ event.vault_opens_at|date:'c' }}" data-reload>
+      <div><b data-d>--</b><span>días</span></div>
+      <div><b data-h>--</b><span>horas</span></div>
+      <div><b data-m>--</b><span>minutos</span></div>
+      <div><b data-s>--</b><span>segundos</span></div>
+      <p class="countdown-done">¡La bóveda ya abrió! Recarga la página.</p>
+    </div>
+  {% else %}
+    <p class="lead">¡La bóveda está abierta! Sube tus fotos de la fiesta; todos los invitados podrán verlas.</p>
+    {% if request.GET.subidas %}<p class="status status-yes">Se subieron {{ request.GET.subidas }} fotos.</p>{% endif %}
+    {% if family %}
+    <form class="actions" method="post" enctype="multipart/form-data" action="{% url 'vault_upload' family.token %}">
+      {% csrf_token %}
+      <input type="file" name="photos" accept="image/*" multiple required aria-label="Elige hasta 10 fotos">
+      <button class="btn btn-yellow">Subir fotos</button>
+    </form>
+    <p><small>Hasta 10 fotos por envío.</small></p>
+    {% endif %}
+    {% if vault %}
+    <ul class="album">
+      {% for p in vault %}<li><a href="{{ p.image.url }}" target="_blank"><img src="{{ p.image.url }}" alt="Foto de {{ p.family.surname }}" loading="lazy"></a></li>{% endfor %}
+    </ul>
+    {% else %}<p>Todavía no hay fotos. ¡Sube la primera!</p>{% endif %}
+  {% endif %}
+</section>
+
+</main>
+
+<footer>Con cariño, la familia de {{ event.child_name }}</footer>
+
+<script src="{% static 'invite/app.js' %}" defer></script>
+</body>
+</html>
