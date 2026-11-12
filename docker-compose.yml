@@ -16,7 +16,7 @@ services:
     expose:
       - "8000" # Coolify's proxy routes the domain to this port
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/fiesta.ics')"]
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/admin/login/')"] # 200 even before the event exists
       interval: 30s
       timeout: 5s
       retries: 3
