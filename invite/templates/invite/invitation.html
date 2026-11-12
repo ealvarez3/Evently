@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ event.title }}</title>
   <meta name="robots" content="noindex">
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'invite/favicon/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'invite/favicon/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'invite/favicon/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'invite/favicon/site.webmanifest' %}">
   <meta property="og:title" content="{{ event.title }}{% if family %} · {{ family.surname }}{% endif %}">
   <meta property="og:description" content="{{ event.start|date:'l j \d\e F'|capfirst }} en {{ event.venue_name }}. ¡Te esperamos!">
   {% if event.hero_child %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ event.hero_child.url }}">{% endif %}
@@ -193,7 +198,7 @@
 
 </main>
 
-<footer>Con cariño, la familia de {{ event.child_name }}</footer>
+<footer>Con cariño, Eduardo Velazquez y Jenifer Sanchez. ¡Te esperamos!</footer>
 
 <script src="{% static 'invite/app.js' %}" defer></script>
 </body>

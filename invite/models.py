@@ -97,7 +97,7 @@ class Event(models.Model):
             out.append(
                 _place("Iglesia", "⛪", self.church_name, self.church_address, self.church_latitude, self.church_longitude, self.church_time)
             )
-        out.append(_place("Salón de fiesta", "🎉", self.venue_name, self.address, self.latitude, self.longitude, self.start))
+        out.append(_place("La fiesta", "🎉", self.venue_name, self.address, self.latitude, self.longitude, self.start))
         return out
 
     @property
